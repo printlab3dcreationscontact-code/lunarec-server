@@ -10,6 +10,7 @@ const { rateLimit } = require("express-rate-limit")
 const bodyParser = require("body-parser")
 const jwt = require("jsonwebtoken")
 const app = express()
+app.set('trust proxy', 1);
 const path = require("path")
 const fs = require("fs")
 
