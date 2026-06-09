@@ -8,7 +8,7 @@
     },
     "logConnections": false,
     "debugOutput": false,
-    "serverAddress": "https://lunarec-server-production.up.railway.app",
+    "serverAddress": "https://lunarec-server-production-9a6e.up.railway.app",
     "targetVersion": null,
     "customPosters": false,
     "allow2016AndEarly2017": false,
