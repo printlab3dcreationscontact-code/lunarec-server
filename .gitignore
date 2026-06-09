@@ -5,7 +5,6 @@ yarn.lock
 
 # generated files
 bin/
-config.json
 database.sqlite
 .vs/
 .first_run
