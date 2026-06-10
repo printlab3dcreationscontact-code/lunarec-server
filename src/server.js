@@ -162,6 +162,9 @@ app.get('/api/config/v2', (req, res) => {
     res.json({
         MessageOfTheDay: fs.readFileSync("./shared-items/motd.txt", 'utf8'),
         CdnBaseUri: `${serverAddress}`,
+        ApiBaseUri: `${serverAddress}`,
+        API: `${serverAddress}`,
+        Notifications: `${serverAddress}`,
         LevelProgressionMaps,
         MatchmakingParams:{
             PreferFullRoomsFrequency: 1,
