@@ -11,7 +11,7 @@
     "serverAddress": "https://lunarec-server-production-9a6e.up.railway.app",
     "targetVersion": null,
     "customPosters": false,
-    "allow2016AndEarly2017": false,
+    "allow2016AndEarly2017": true,
     "clearImageCacheOnLaunch": true,
     "port": 3000,
     "token_signature": "MonSuperMotDePasseTresLongEtSecurise2026!",
