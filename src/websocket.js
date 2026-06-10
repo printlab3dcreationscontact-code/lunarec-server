@@ -37,57 +37,108 @@ const ResponseResults = {
 
 async function processRequest(data) {
     let res;
-    
-    log(LogType.WS, `Data received: ${data}`)
 
-    data = JSON.parse(data);
+    try {
+        log(LogType.WS, `Data received: ${data}`)
 
-    if (data.api != undefined) {
-        if (data.api === "playerSubscriptions/v1/update") {
-            log(LogType.WS, `Presence update called!`)
-            res = await createResponse(12, data)
-        } else if (data.api === "heartbeat2") {
-            log(LogType.WS, `Heartbeat called!`)
-            res = await createResponse(4, data)
-        } else {
-            log(LogType.WS, `Unknown call: "${data.api}". Sending blank response`)
-            res = ""
+        try {
+            data = JSON.parse(data);
+        } catch (parseErr) {
+            log(LogType.Error, `WS: Failed to parse incoming message as JSON: ${parseErr.message}`)
+            return JSON.stringify({ error: "Invalid JSON" })
         }
-    } else {
-        res = JSON.stringify({"SessionId": 2017})
-    }
 
-    log(LogType.WS, `Data sent: ${res}`)
-    return res;
+        if (data.api != undefined) {
+            if (data.api === "playerSubscriptions/v1/update") {
+                log(LogType.WS, `Presence update called!`)
+                res = await createResponse(12, data)
+            } else if (data.api === "heartbeat2") {
+                log(LogType.WS, `Heartbeat called!`)
+                res = await createResponse(4, data)
+            } else {
+                log(LogType.WS, `Unknown call: "${data.api}". Sending blank response`)
+                res = ""
+            }
+        } else {
+            res = JSON.stringify({"SessionId": 2017})
+        }
+
+        log(LogType.WS, `Data sent: ${res}`)
+        return res;
+    } catch (err) {
+        log(LogType.Error, `WS: Unhandled error in processRequest: ${err.message}`)
+        return JSON.stringify({ error: "Internal server error" })
+    }
 }
 
 async function createResponse(id, data) {
-    let usr = await db.findOne({ where: { id: data.param.PlayerIds[0] }})
-    let ses = JSON.parse(usr.session)
-    return JSON.stringify({
-        Id: id,
-        Msg: {
-            PlayerId: data.param.PlayerIds[0],
-            IsOnline: true,
-            InScreenMode: false,
-            GameSession: ses
+    try {
+        if (!data.param || !data.param.PlayerIds || data.param.PlayerIds.length === 0) {
+            log(LogType.Error, `WS: createResponse called with missing or empty param.PlayerIds`)
+            return JSON.stringify({ error: "Missing PlayerIds" })
         }
-    })
+
+        const playerId = data.param.PlayerIds[0]
+
+        let usr = await db.findOne({ where: { id: playerId }})
+
+        if (!usr) {
+            log(LogType.Error, `WS: No user found in database for player ID: ${playerId}`)
+            return JSON.stringify({ error: "Player not found" })
+        }
+
+        let ses;
+        try {
+            ses = JSON.parse(usr.session)
+        } catch (parseErr) {
+            log(LogType.Error, `WS: Failed to parse session data for player ID ${playerId}: ${parseErr.message}`)
+            return JSON.stringify({ error: "Invalid session data" })
+        }
+
+        return JSON.stringify({
+            Id: id,
+            Msg: {
+                PlayerId: playerId,
+                IsOnline: true,
+                InScreenMode: false,
+                GameSession: ses
+            }
+        })
+    } catch (err) {
+        log(LogType.Error, `WS: Unhandled error in createResponse: ${err.message}`)
+        return JSON.stringify({ error: "Internal server error" })
+    }
 }
 
 function start(server) {
-    const wss = new WebSocket.Server({ server });
+    try {
+        const wss = new WebSocket.Server({ server });
 
-    wss.on('connection', async (ws) => {
-        log(LogType.Debug, "WS: A client connected!")
+        wss.on('error', (err) => {
+            log(LogType.Error, `WS: WebSocket server error: ${err.message}`)
+        })
 
-        ws.on('message', async (data) => {
-            ws.send(await processRequest(data));
+        wss.on('connection', async (ws) => {
+            log(LogType.Debug, "WS: A client connected!")
+
+            ws.on('message', async (data) => {
+                try {
+                    ws.send(await processRequest(data));
+                } catch (err) {
+                    log(LogType.Error, `WS: Failed to send response to client: ${err.message}`)
+                }
+            });
+
+            ws.on('error', (err) => {
+                log(LogType.Error, `WS: Client connection error: ${err.message}`)
+            })
+
+            ws.on('close', async (ws) => {
+                log(LogType.Debug, "WS: A client disconnected!")
+            });
         });
-
-        ws.on('close', async (ws) => {
-            log(LogType.Debug, "WS: A client disconnected!")
-        });
-    });
+    } catch (err) {
+        log(LogType.Error, `WS: Failed to initialize WebSocket server: ${err.message}`)
+    }
 }
 module.exports = { start }
