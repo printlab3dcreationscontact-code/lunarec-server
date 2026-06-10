@@ -72,11 +72,19 @@ function resetServerData() {
 function clearImages() { 
 	log(LogType.Info, "Deleting Share Cam Images...")
 	let dir_img = "./cdn/images/"
+	if (!fs.existsSync(dir_img)) {
+		log(LogType.Info, "Share Cam images directory does not exist, skipping.")
+		return
+	}
 	const files_img = fs.readdirSync(dir_img);
-	files_img.forEach((file) => {
-		if (file === ".gitkeep") return;
-		fs.unlinkSync(`${dir_img}/${file}`);
-	});
+	try {
+		files_img.forEach((file) => {
+			if (file === ".gitkeep") return;
+			fs.unlinkSync(`${dir_img}/${file}`);
+		});
+	} catch (e) {
+		log(LogType.Error, `Something went wrong while deleting Share Cam images.\n\n${e}`)
+	}
     log(LogType.Info, "Cleared!")
 }
 
