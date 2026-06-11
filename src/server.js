@@ -1,7 +1,12 @@
 //Get variables from other files
-const { targetVersion, port, serverAddress, logConnections, token_signature, allow2016AndEarly2017, rateLimits } = require("../config.json")
+let { targetVersion, port, serverAddress, logConnections, token_signature, allow2016AndEarly2017, rateLimits } = require("../config.json")
 const { version } = require("../package.json")
 const { LevelProgressionMaps, DailyObjectives } = require("../shared-items/configv2.json")
+
+// Nettoyage de sécurité : Retire le slash final de serverAddress s'il existe
+if (serverAddress && serverAddress.endsWith('/')) {
+    serverAddress = serverAddress.slice(0, -1);
+}
 
 //Import Modules
 const express = require('express') //express.js - the web server
@@ -204,7 +209,6 @@ app.post('*/api/platformlogin/v*/profiles', async (req, res) => {
     res.json(accs)
 })
 
-// MODIFICATION ICI : Suppression du slash final pour correspondre aux requêtes du client
 app.post('*/api/platformlogin/v*', async (req, res) => {
     let body_JWT = req.body
     //remove any unused params to reduce bloat
