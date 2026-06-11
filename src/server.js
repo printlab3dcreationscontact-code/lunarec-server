@@ -204,7 +204,8 @@ app.post('*/api/platformlogin/v*/profiles', async (req, res) => {
     res.json(accs)
 })
 
-app.post('*/api/platformlogin/v*/', async (req, res) => {
+// MODIFICATION ICI : Suppression du slash final pour correspondre aux requêtes du client
+app.post('*/api/platformlogin/v*', async (req, res) => {
     let body_JWT = req.body
     //remove any unused params to reduce bloat
     delete body_JWT.AuthParams
