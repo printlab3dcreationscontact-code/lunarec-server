@@ -63,7 +63,7 @@ const authenticateToken = async (req, res, next) => {
       return res.sendStatus(401); // Unauthorized
     }
 
-    //old build mode. see why it's insecure now?
+    //old build mode
     try {
         if(allow2016AndEarly2017 && Buffer.from(token).toString('base64') === "recroom@gmail.com:recnet87") {
             req.uid = req.headers['x-rec-room-profile']
@@ -81,18 +81,13 @@ const authenticateToken = async (req, res, next) => {
     });
 };
 
-//Rate limiting, Taken from the npm page and tweaked a bit
+//Rate limiting
 const limiter = rateLimit({
 	windowMs: rateLimits.window,
 	limit: rateLimits.maxRequests,
-	standardHeaders: 'draft-7', // draft-6: `RateLimit-*` headers; draft-7: combined `RateLimit` header
-	legacyHeaders: false, // Disable the `X-RateLimit-*` headers.
+	standardHeaders: 'draft-7',
+	legacyHeaders: false,
 })
-
-/*
-    Server code starts here.
-    Smaller requests are still stored here, but most of the requests are stored in the /routes folder.
-*/
 
 //Debug logging
 app.use((req, res, next) => {
@@ -105,13 +100,13 @@ app.use(authenticateToken);
 app.use(limiter)
 
 /* ROUTES */
-app.use("/api/players", require("./routes/players.js")) // http://localhost/api/players/
-app.use("/api/avatar", require("./routes/avatar.js")) // http://localhost/api/avatar/
-app.use("/api/images", require("./routes/images.js")) // http://localhost/api/images/
-app.use("/api/settings", require("./routes/settings.js")) // http://localhost/api/settings/
-app.use("/api/gamesessions", require("./routes/gamesessions.js")) // http://localhost/api/gamesessions/
-app.use("/api/relationships", require("./routes/relationships.js")) // http://localhost/api/relationships/
-app.use("/instance", require("./routes/lunarrec.js")) // http://localhost/instance
+app.use("/api/players", require("./routes/players.js")) 
+app.use("/api/avatar", require("./routes/avatar.js")) 
+app.use("/api/images", require("./routes/images.js")) 
+app.use("/api/settings", require("./routes/settings.js")) 
+app.use("/api/gamesessions", require("./routes/gamesessions.js")) 
+app.use("/api/relationships", require("./routes/relationships.js")) 
+app.use("/instance", require("./routes/lunarrec.js")) 
 
 /* GET REQUESTS */
 
@@ -203,9 +198,9 @@ app.get('/img/:id', (req, res) => {
 
 /* POST REQUESTS */
 
-// Configuration de la route profiles standard
+// Intercepte le chargement/création de profil
 app.post('/api/platformlogin/v*/profiles', async (req, res) => {
-    let body = req.body.PlatformId
+    let body = req.body.PlatformId || "GamerLocal"
     let accs = await datamanager.getAssociatedAccounts(body)
     if (accs.length == 0) {
         let acc = await datamanager.createAccount(`LunarRecUser_${await getPlayerTotal()+1}`, body)
@@ -214,9 +209,8 @@ app.post('/api/platformlogin/v*/profiles', async (req, res) => {
     res.json(accs)
 })
 
-// Configuration de la route profiles pour double slash (June 2017)
 app.post('//api/platformlogin/v*/profiles', async (req, res) => {
-    let body = req.body.PlatformId
+    let body = req.body.PlatformId || "GamerLocal"
     let accs = await datamanager.getAssociatedAccounts(body)
     if (accs.length == 0) {
         let acc = await datamanager.createAccount(`LunarRecUser_${await getPlayerTotal()+1}`, body)
@@ -225,26 +219,33 @@ app.post('//api/platformlogin/v*/profiles', async (req, res) => {
     res.json(accs)
 })
 
-// Configuration de la route login standard
+// Génère automatiquement le Token d'accès attendu par Unity
 app.post('/api/platformlogin/v*', async (req, res) => {
     let body_JWT = req.body
     delete body_JWT.AuthParams
     delete body_JWT.BuildTimestamp
     delete body_JWT.DeviceId
 
-    const token = jwt.sign(req.body, token_signature, {expiresIn: "12h"});
-    res.json({Token: token, PlayerId:body_JWT.PlayerId, Error: ""})
+    if (!body_JWT.PlayerId) {
+        body_JWT.PlayerId = 1
+    }
+
+    const token = jwt.sign(body_JWT, token_signature, {expiresIn: "12h"});
+    res.json({Token: token, PlayerId: body_JWT.PlayerId, Error: ""})
 })
 
-// Configuration de la route login pour double slash
 app.post('//api/platformlogin/v*', async (req, res) => {
     let body_JWT = req.body
     delete body_JWT.AuthParams
     delete body_JWT.BuildTimestamp
     delete body_JWT.DeviceId
 
-    const token = jwt.sign(req.body, token_signature, {expiresIn: "12h"});
-    res.json({Token: token, PlayerId:body_JWT.PlayerId, Error: ""})
+    if (!body_JWT.PlayerId) {
+        body_JWT.PlayerId = 1
+    }
+
+    const token = jwt.sign(body_JWT, token_signature, {expiresIn: "12h"});
+    res.json({Token: token, PlayerId: body_JWT.PlayerId, Error: ""})
 })
 
 app.post(`/api/PlayerSubscriptions/v1/init`, async (req, res) => {
