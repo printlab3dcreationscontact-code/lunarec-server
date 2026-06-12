@@ -252,12 +252,23 @@ app.post(`/api/PlayerSubscriptions/v1/init`, async (req, res) => {
     res.send("[]")
 })
 
-const server = app.listen(port, () => {
-    app._router.stack.forEach(function(r){
-        if (r.route && r.route.path){
-            log(LogType.Debug, `Route: [${r.route.stack[0].method.toUpperCase()}] ${r.route.path}`)
+const PORT = process.env.PORT || port || 3000;
+
+const server = app.listen(PORT, "0.0.0.0", () => {
+    app._router.stack.forEach((r) => {
+        if (r.route && r.route.path) {
+            log(
+                LogType.Debug,
+                `Route: [${r.route.stack[0].method.toUpperCase()}] ${r.route.path}`
+            );
         }
-    })
-    log(LogType.Info, `Server started on port ${port}`)
-    require("./websocket.js").start(server)
-})
+    });
+
+    log(LogType.Info, `Server started on port ${PORT}`);
+
+    require("./websocket.js").start(server);
+});
+
+server.on("error", (err) => {
+    console.error("Server error:", err);
+});
