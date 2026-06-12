@@ -168,7 +168,7 @@ app.get('/api/config/v2', (req, res) => {
     });
 });
 
-// ================= PORT FIX (IMPORTANT RAILWAY) =================
+// ================= PORT FIX (IMPORTANT RAILWAY) ==================
 const PORT = Number(process.env.PORT || port || 3000);
 
 // ================= START SERVER =================
