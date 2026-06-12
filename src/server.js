@@ -44,10 +44,8 @@ const authenticateToken = async (req, res, next) => {
         /^\/api\/config\/v\d+$/,
         /^\/api\/platformlogin\/v\d+$/,
         /^\/api\/platformlogin\/v\d+\/profiles$/,
-        /^\/api\/platformlogin\/v\d+\/getcachedlogins$/,
         /^\/\/api\/platformlogin\/v\d+$/, //For some 2017 june builds
         /^\/\/api\/platformlogin\/v\d+\/profiles$/, //For some 2017 june builds
-        /^\/\/api\/platformlogin\/v\d+\/getcachedlogins$/, //For some 2017 june builds
         /^\/api\/players\/v\d+\/getorcreate$/,
     ];
     
@@ -200,8 +198,8 @@ app.get('/img/:id', (req, res) => {
 
 /* POST REQUESTS */
 
-// IMPORTANT: cette route doit être déclarée AVANT la route catch-all */api/platformlogin/v*
-app.post('*/api/platformlogin/v*/getcachedlogins', async (req, res) => {
+// Configuration de la route profiles standard
+app.post('/api/platformlogin/v*/profiles', async (req, res) => {
     let body = req.body.PlatformId
     let accs = await datamanager.getAssociatedAccounts(body)
     if (accs.length == 0) {
@@ -211,20 +209,31 @@ app.post('*/api/platformlogin/v*/getcachedlogins', async (req, res) => {
     res.json(accs)
 })
 
-app.post('*/api/platformlogin/v*/profiles', async (req, res) => {
-    body = req.body.PlatformId
+// Configuration de la route profiles pour double slash (June 2017)
+app.post('//api/platformlogin/v*/profiles', async (req, res) => {
+    let body = req.body.PlatformId
     let accs = await datamanager.getAssociatedAccounts(body)
     if (accs.length == 0) {
         let acc = await datamanager.createAccount(`LunarRecUser_${await getPlayerTotal()+1}`, body)
         accs = [JSON.parse(acc)]
     }
-
     res.json(accs)
 })
 
-app.post('*/api/platformlogin/v*', async (req, res) => {
+// Configuration de la route login standard
+app.post('/api/platformlogin/v*', async (req, res) => {
     let body_JWT = req.body
-    //remove any unused params to reduce bloat
+    delete body_JWT.AuthParams
+    delete body_JWT.BuildTimestamp
+    delete body_JWT.DeviceId
+
+    const token = jwt.sign(req.body, token_signature, {expiresIn: "12h"});
+    res.json({Token: token, PlayerId:body_JWT.PlayerId, Error: ""})
+})
+
+// Configuration de la route login pour double slash
+app.post('//api/platformlogin/v*', async (req, res) => {
+    let body_JWT = req.body
     delete body_JWT.AuthParams
     delete body_JWT.BuildTimestamp
     delete body_JWT.DeviceId
