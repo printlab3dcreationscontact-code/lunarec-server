@@ -176,7 +176,12 @@ app.get('/api/config/v2', (req, res) => {
             PreferEmptyRoomsFrequency: 0
         },
         DailyObjectives,
-        ConfigTable: [{"Key":"Gift.DropChance","Value":"0.5"},{"Key":"Gift.XP","Value":"0.5"}],
+        ConfigTable: [
+            {"Key":"Gift.DropChance","Value":"0.5"},
+            {"Key":"Gift.XP","Value":"0.5"},
+            {"Key":"Registration.Mode","Value":"Normal"},
+            {"Key":"Authentication.RequireIslandsAuth","Value":"false"}
+        ],
         PhotonConfig: {"CloudRegion":"us","CrcCheckEnabled":false,"EnableServerTracingAfterDisconnect":false}
     })
 })
